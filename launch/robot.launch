@@ -1,0 +1,12 @@
+<launch>
+    <arg name="isKeyControl" default="false"/>
+    <node pkg="robot_description" type="debug_sub" name="contronl_robot"/>
+    <node pkg="robot_description" type="IMU_pub" name="IMU_Odom">
+       <!--<remap from="/odom" to="/base_controller/odom"/>-->
+    </node>
+    <node pkg="robot_description" type="robot_des" name="tf_pub"/>
+    <!--<include file="$(find robot_pose_ekf)/robot_pose_ekf.launch"/>-->
+    <!--<node pkg="robot_description" type="ekf_odom" name="ekf2odom"/>-->
+    <include if="$(arg isKeyControl)" file="$(find mrobot_teleop)/launch/mrobot_teleop.launch"/>
+    <!--<node pkg="tf" type="static_transform_publisher" name="fix_odom" args="0 0 0 0 0 0 odom base_footprint 100" />-->
+</launch>

@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="rplidar_ros" type="rplidarNode" name="scan">
+        <!--<remap from="/scan" to="/base_scan"/>-->
+    </node>
+</launch>
