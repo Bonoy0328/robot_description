@@ -75,7 +75,7 @@ boost::array<double, 36> odom_twist_covariance = {
 	 * than we can send them, the number here specifies how many messages to
 	 * buffer up before throwing some away.
 	 */
-	// ros::Publisher IMU_pub = nh.advertise<sensor_msgs::Imu>("imu_data", 1000);
+	ros::Publisher IMU_pub = nh.advertise<sensor_msgs::Imu>("imu_data", 1000);
 	ros::Rate loop_rate(50);
 	ros::Publisher pub_ = nh.advertise<nav_msgs::Odometry>("odom", 50);
 	tf::TransformBroadcaster odom_broadcaster_;
