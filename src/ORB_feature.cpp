@@ -6,6 +6,29 @@
 #include "cv_bridge/cv_bridge.h"
 #include "sensor_msgs/image_encodings.h"
 #include <chrono>
+class ORB_feature
+{
+private:
+    ros::NodeHandle nh_;
+    image_transport::ImageTransport sub_(nh_);
+public:
+    ORB_feature(/* args */);
+    ~ORB_feature();
+    detectFeature(){
+        sub_ = nh_.subscribe("/camera/rgb/image_raw",);
+    }
+};
+
+ORB_feature::ORB_feature(/* args */)
+{
+}
+
+ORB_feature::~ORB_feature()
+{
+}
+
+cv::Mat cvColorImgMat;
+cv::Mat cvColorImgMat2;
 void showView(const sensor_msgs::ImageConstPtr msgImg){
     cv_bridge::CvImagePtr cvImagePtr;
     try{
@@ -14,8 +37,7 @@ void showView(const sensor_msgs::ImageConstPtr msgImg){
         ROS_ERROR_STREAM("Cv_bridge Exception:" << e.what());
         return;
     }
-    cv::Mat cvColorImgMat = cvImagePtr->image;
-    cv::Mat cvGrayImgMat;
+    cvColorImgMat = cvImagePtr->image;
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
     Ptr<cv::FeatureDetector> detector = cv::ORB::create();
@@ -28,7 +50,6 @@ void showView(const sensor_msgs::ImageConstPtr msgImg){
     ROS_INFO("extract ORB cost = %f seconds",time_used.count());
     cv::Mat outimg;
     cv::drawKeyPoints(cvColorImgMat,keypoints,outimg,Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
-    cv::cvtColor(cvColorImgMat,cvGrayImgMat,CV_BGR2GRAY);
     cv::imshow("colorview",cvColorImgMat);
     cv::imshow("ORB feature",outimg);
     // cv::imshow("grayview",cvGrayImgMat);
