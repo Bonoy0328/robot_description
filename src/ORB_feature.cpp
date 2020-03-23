@@ -8,16 +8,17 @@
 #include <chrono>
 class ORB_feature
 {
-private:
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     ros::NodeHandle nh_;
-    image_transport::ImageTransport it_(nh_);
+     image_transport::ImageTransport it;
+    image_transport::Subscriber sub;
 public:
-    ORB_feature(){
-        image_transport::Subscriber sub = it_.subscribe("/camera/rgb/image_raw",1,&ORB_feature::callback);
+    ORB_feature()
+        :it(nh_){
+        sub = it.subscribe("/camera/rgb/image_raw",1,&ORB_feature::callback,this);
     }
-    void callback(const sensor_msgs::ImageConstPtr msgImg){
+    void callback(const sensor_msgs::ImageConstPtr& msgImg){
         cv_bridge::CvImagePtr cvImagePtr;
         try{
             cvImagePtr = cv_bridge::toCvCopy(msgImg,sensor_msgs::image_encodings::BGR8);
