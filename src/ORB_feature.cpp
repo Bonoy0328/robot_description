@@ -19,7 +19,7 @@ void showView(const sensor_msgs::ImageConstPtr msgImg){
     cv::imshow("grayview",cvGrayImgMat);
     cv::waitKey(5);
 }
-int main(int argc, char const *argv[])
+int main(int argc, char *argv[])
 {
     ros::init(argc,argv,"grayView");
     ros::NodeHandle nh;
