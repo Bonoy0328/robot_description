@@ -2,7 +2,7 @@
 #include "image_transport/image_transport.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/core/core.hpp"
-#include "opencv2/features2d/feature2d.hpp"
+#include "opencv2/features2d/features2d.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "sensor_msgs/image_encodings.h"
 #include <chrono>
@@ -18,21 +18,21 @@ void showView(const sensor_msgs::ImageConstPtr msgImg){
     cv::Mat cvGrayImgMat;
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
-    Ptr<cv::FeatureDetector> detector = cv::ORB::create();
-    Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
-    chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
+    cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
+    cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     detector->detect(cvColorImgMat,keypoints);
-    descriptor->compute(cvColorImgMat,descriptors);
-    chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
-    chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+    // descriptor->compute(cvColorImgMat,keypoints,descriptors);
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
     ROS_INFO("extract ORB cost = %f seconds",time_used.count());
     cv::Mat outimg;
-    cv::drawKeyPoints(cvColorImgMat,keypoints,outimg,Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
+    cv::drawKeypoints(cvColorImgMat,keypoints,outimg,cv::Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
     cv::cvtColor(cvColorImgMat,cvGrayImgMat,CV_BGR2GRAY);
-    cv::imshow("colorview",cvColorImgMat);
+    // cv::imshow("colorview",cvColorImgMat);
     cv::imshow("ORB feature",outimg);
     // cv::imshow("grayview",cvGrayImgMat);
-    // cv::waitKey(5);
+    cv::waitKey(5);
 }
 int main(int argc, char *argv[])
 {
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     cv::moveWindow("colorview",100,100);
     cv::namedWindow("grayview",cv::WINDOW_NORMAL);
     cv::moveWindow("grayview",600,100);
-    image_transport::Subscriber sub = it.subscribe("/camera/rgb/image_raw",1,showView);
+    image_transport::Subscriber sub = it.subscribe("/camera/rgb/image_raw",2,showView);
     ros::spin();
     return 0;
 }
