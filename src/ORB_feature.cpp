@@ -31,6 +31,7 @@ public:
         cv::Mat descriptors,descriptors2;
         cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
         cv::Ptr<cv::DescriptorExtractor> descriptor = cv::ORB::create();
+        cv::Ptr<cv::DescriptorMatcher> matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
         detector->detect(cvColorImgMat,keypoints);
         detector->detect(cvColorImgMat2,keypoints2);
@@ -40,11 +41,37 @@ public:
         std::chrono::duration<double> time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
         ROS_INFO("extract ORB cost = %f seconds",time_used.count());
         cvColorImgMat2 = cvColorImgMat;
-        cv::Mat outimg,outimg2;
-        cv::drawKeypoints(cvColorImgMat,keypoints,outimg,cv::Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
-        cv::drawKeypoints(cvColorImgMat2,keypoints2,outimg2,cv::Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
-        cv::imshow("colorview",outimg2);
-        cv::imshow("ORB feature",outimg);
+        // cv::Mat outimg,outimg2;
+        // cv::drawKeypoints(cvColorImgMat,keypoints,outimg,cv::Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
+        // cv::drawKeypoints(cvColorImgMat2,keypoints2,outimg2,cv::Scalar::all(-1),cv::DrawMatchesFlags::DEFAULT);
+        // cv::imshow("colorview",outimg2);
+        // cv::imshow("ORB feature",outimg);
+        
+        //match
+        std::vector<cv::DMatch> matches;
+        t1 = std::chrono::steady_clock::now();
+        matcher->match(descriptors,descriptors2,matches);
+        t2 = std::chrono::steady_clock::now();
+        time_used = std::chorno::duration_cast<std::chrono::duration<double>>(t2 - t1);
+        ROS_INFO("match ORB cost %f seconds",time_used);
+
+        //choise better match
+        auto min_max = std::minmax_element(matches.begin(),matches.end(),
+            [](const Dmatch &m1,const Dmatch &m2){return m1.distance < m2.distance;});
+        double min_dist = min_max.first->distance;
+        double max_dist = min_max.second->distance;
+        std::vector<DMatch> good_matches;
+        for (int i = 0; i < descriptors.rows; i++){
+            if(matches[i].distance <= std::max(2 * min_dist,30.0))
+                good_matches.push_back(matches[i]);
+        }
+
+        //draw the answer
+        cv::Mat img_match;
+        cv::Mat img_goodmatch;
+        cv::drawMatches(cvColorImgMat,keypoints,cvColorImgMat2,keypoints2,good_matches,img_goodmatch);
+        cv::imshow("good matches",img_goodmatch);
+        
         // cv::imshow("grayview",cvGrayImgMat);
         cv::waitKey(5);
     }
