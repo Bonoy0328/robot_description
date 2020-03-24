@@ -8,15 +8,15 @@ class getXYZfromPoint
 {
 private:
     ros::NodeHandle nh;
-    ros::Subscribe sub;
+    ros::Subscriber sub;
 public:
     getXYZfromPoint(){
-        sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB>>("/camera/depth_registered/points",1,getXYZfromPoint::callback,this);
+        sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZRGB>>("/camera/depth_registered/points",1,&getXYZfromPoint::callback,this);
     };
     void callback(const pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr& point){
-        ROS_INFO("Cloud:width = %d,height = %d",point->width,msg->height);
-        BOOST_FOREACH(const pcl::PointXYZRGB& pt,point->points)
-            ROS_INFO("%f %f %f",pt.x,pt.y,pt.z)
+        ROS_INFO("Cloud:width = %d,height = %d",point->width,point->height);
+        // BOOST_FOREACH(const pcl::PointXYZRGB& pt,point->points)
+            ROS_INFO("%f %f %f",point->points[240000].x,point->points[240000].y,point->points[240000].z);
     }
 };
 int main(int argc, char *argv[])

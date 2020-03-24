@@ -7,21 +7,7 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(
-  catkin 
-  REQUIRED 
-  COMPONENTS 
-  tf 
-  roscpp 
-  rospy 
-  nav_msgs 
-  std_msgs 
-  geometry_msgs 
-  serial 
-  sensor_msgs
-  image_transport
-  cv_bridge
-  )
+find_package(catkin REQUIRED COMPONENTS tf roscpp rospy nav_msgs std_msgs geometry_msgs serial sensor_msgs image_transport cv_bridge pcl_ros)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -273,6 +259,15 @@ add_executable(ORB_feature
 )
 add_dependencies(ORB_feature ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(ORB_feature
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+)
+
+add_executable(getXYZfromPoint
+  src/getXYZfromPoint.cpp
+)
+add_dependencies(getXYZfromPoint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(getXYZfromPoint
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
