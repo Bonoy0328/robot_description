@@ -10,6 +10,7 @@ class ORB_feature
 {
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
+    uint8_t flag=0;
     ros::NodeHandle nh_;
      image_transport::ImageTransport it;
     image_transport::Subscriber sub;
@@ -27,6 +28,10 @@ public:
             return;
         }
         cvColorImgMat = cvImagePtr->image;
+        if(flag==0){
+            cvColorImgMat2 = cvImagePtr->image;
+            flag =2;
+        }
         std::vector<cv::KeyPoint> keypoints,keypoints2;
         cv::Mat descriptors,descriptors2;
         cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
@@ -50,17 +55,26 @@ public:
         //match
         std::vector<cv::DMatch> matches;
         t1 = std::chrono::steady_clock::now();
-        matcher->match(descriptors,descriptors2,matches);
+        try
+        {
+            matcher->match(descriptors,descriptors2,matches);
+        }
+        catch(const cv::Exception& e)
+        {
+            ROS_INFO(e.what());
+        }
+        
+
         t2 = std::chrono::steady_clock::now();
-        time_used = std::chorno::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        ROS_INFO("match ORB cost %f seconds",time_used);
+        time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+        ROS_INFO("match ORB cost %f seconds",time_used.count());
 
         //choise better match
         auto min_max = std::minmax_element(matches.begin(),matches.end(),
-            [](const Dmatch &m1,const Dmatch &m2){return m1.distance < m2.distance;});
+            [](const cv::DMatch &m1,const cv::DMatch &m2){return m1.distance < m2.distance;});
         double min_dist = min_max.first->distance;
         double max_dist = min_max.second->distance;
-        std::vector<DMatch> good_matches;
+        std::vector<cv::DMatch> good_matches;
         for (int i = 0; i < descriptors.rows; i++){
             if(matches[i].distance <= std::max(2 * min_dist,30.0))
                 good_matches.push_back(matches[i]);
