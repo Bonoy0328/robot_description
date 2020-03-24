@@ -8,11 +8,12 @@
 #include <chrono>
 class ORB_feature
 {
+private:
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     uint8_t flag=0;
     ros::NodeHandle nh_;
-     image_transport::ImageTransport it;
+    image_transport::ImageTransport it;
     image_transport::Subscriber sub;
 public:
     ORB_feature()
