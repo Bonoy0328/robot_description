@@ -7,31 +7,18 @@
 #include "sensor_msgs/image_encodings.h"
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
+#include "message_filters/time_synchronizer.h"
 #include "message_filters/sync_policies/approximate_time.h"
-#include "boost/thread/thread.hpp"
+#include <boost/thread/thread.hpp>
 #include <boost/foreach.hpp>
 #include "pcl_ros/point_cloud.h"
 #include <chrono>
-class ORB_feature
-{
-private:
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     uint8_t flag=0;
-    ros::NodeHandle nh_;
-    // image_transport::ImageTransport it;
-    // image_transport::Subscriber sub;
-public:
-    ORB_feature(){
-        // sub = nh_.subscribe("/camera/rgb/image_raw",1);
-        // sub2 = nh_.subscribe("/camera/depth_registered/points",1)
-        message_filters::Subscriber<sensor_msgs::Image> sub(nh_,"/camera/rgb/image_raw",1);
-        message_filters::Subscriber<pcl::PointCloud<pcl::PointXYZ>> sub2(nh_,"/camera/depth_registered/points",1);
-        TimeSynchronizer<sensor_msgs::Image,pcl::PointCloud<pcl::PointXYZ>> sync(sub, sub2, 10);
-        sync.registerCallback(boost::bind(&ORB_feature::callback, _1, _2));
-    }
     void callback(const sensor_msgs::ImageConstPtr& msgImg , const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& point){
         cv_bridge::CvImagePtr cvImagePtr;
+        ROS_INFO("Cloud:width = %d,height = %d",point->width,point->height);
         try{
             cvImagePtr = cv_bridge::toCvCopy(msgImg,sensor_msgs::image_encodings::BGR8);
         }catch(cv_bridge::Exception e){
@@ -100,18 +87,38 @@ public:
         // cv::imshow("grayview",cvGrayImgMat);
         cv::waitKey(5);
     }
+class ORB_feature
+{
+private:
+
+
+    // image_transport::ImageTransport it;
+    // image_transport::Subscriber sub;
+public:
+    ORB_feature(){
+        // sub = nh_.subscribe("/camera/rgb/image_raw",1);
+        // sub2 = nh_.subscribe("/camera/depth_registered/points",1)
+        
+    }
+
 };
 
 int main(int argc, char *argv[])
 {
     ros::init(argc,argv,"grayView");
+    ros::NodeHandle nh_;
+    message_filters::Subscriber<sensor_msgs::Image> sub(nh_,"/camera/rgb/image_raw",1);
+    message_filters::Subscriber<pcl::PointCloud<pcl::PointXYZ>> sub2(nh_,"/camera/depth_registered/points",1);
+   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,pcl::PointCloud<pcl::PointXYZ>> MySync;
+    message_filters::Synchronizer<MySync> sync(MySync(10),sub, sub2);
+    sync.registerCallback(boost::bind(&callback,_1,_2));
     // ros::NodeHandle nh;
     // image_transport::ImageTransport it(nh);
     // cv::namedWindow("colorview",cv::WINDOW_NORMAL);
     // cv::moveWindow("colorview",100,100);
     // cv::namedWindow("grayview",cv::WINDOW_NORMAL);
     // cv::moveWindow("grayview",600,100);
-    ORB_feature orb;
+    // ORB_feature orb;
     ros::spin();
     return 0;
 }
