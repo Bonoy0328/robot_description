@@ -5,6 +5,12 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "cv_bridge/cv_bridge.h"
 #include "sensor_msgs/image_encodings.h"
+#include "message_filters/subscriber.h"
+#include "message_filters/synchronizer.h"
+#include "message_filters/sync_policies/approximate_time.h"
+#include "boost/thread/thread.hpp"
+#include <boost/foreach.hpp>
+#include "pcl_ros/point_cloud.h"
 #include <chrono>
 class ORB_feature
 {
@@ -13,14 +19,18 @@ private:
     cv::Mat cvColorImgMat2;
     uint8_t flag=0;
     ros::NodeHandle nh_;
-    image_transport::ImageTransport it;
-    image_transport::Subscriber sub;
+    // image_transport::ImageTransport it;
+    // image_transport::Subscriber sub;
 public:
-    ORB_feature()
-        :it(nh_){
-        sub = it.subscribe("/camera/rgb/image_raw",1,&ORB_feature::callback,this);
+    ORB_feature(){
+        // sub = nh_.subscribe("/camera/rgb/image_raw",1);
+        // sub2 = nh_.subscribe("/camera/depth_registered/points",1)
+        message_filters::Subscriber<sensor_msgs::Image> sub(nh_,"/camera/rgb/image_raw",1);
+        message_filters::Subscriber<pcl::PointCloud<pcl::PointXYZ>> sub2(nh_,"/camera/depth_registered/points",1);
+        TimeSynchronizer<sensor_msgs::Image,pcl::PointCloud<pcl::PointXYZ>> sync(sub, sub2, 10);
+        sync.registerCallback(boost::bind(&ORB_feature::callback, _1, _2));
     }
-    void callback(const sensor_msgs::ImageConstPtr& msgImg){
+    void callback(const sensor_msgs::ImageConstPtr& msgImg , const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& point){
         cv_bridge::CvImagePtr cvImagePtr;
         try{
             cvImagePtr = cv_bridge::toCvCopy(msgImg,sensor_msgs::image_encodings::BGR8);

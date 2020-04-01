@@ -7,10 +7,10 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS tf roscpp rospy nav_msgs std_msgs geometry_msgs serial sensor_msgs image_transport cv_bridge pcl_ros)
+find_package(catkin REQUIRED COMPONENTS tf roscpp rospy nav_msgs std_msgs geometry_msgs serial sensor_msgs image_transport cv_bridge pcl_ros message_filters)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
