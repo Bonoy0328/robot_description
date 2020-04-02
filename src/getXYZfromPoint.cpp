@@ -1,5 +1,4 @@
 #include "ros/ros.h"
-#include "pcl_ros/point_cloud.h"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.h"
 #include "sensor_msgs/Image.h"
@@ -7,9 +6,15 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
-#include <pcl/io/pcd_io.h>
 #include <boost/foreach.hpp>
 #include <chrono>
+#include <pcl/io/pcd_io.h>
+#include "pcl_ros/point_cloud.h"
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <pcl/conversions.h>
+#include <pcl_ros/transforms.h>
 class getXYZfromPoint
 {
 private:
@@ -19,8 +24,8 @@ private:
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     pcl::PCLPointCloud2 pcl_pc2;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     uint8_t flag=0;
+    long int cnt = 0;
     // cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
 public:
     getXYZfromPoint(){
@@ -28,10 +33,16 @@ public:
         sub = nh.subscribe("/camera/depth_registered/points",5,&getXYZfromPoint::callback,this);
     };
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
+        cnt = 0;
         cv_bridge::CvImagePtr cvImagePtr;
         pcl_conversions::toPCL(*point,pcl_pc2);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud);
         BOOST_FOREACH(const pcl::PointXYZ& pt,temp_cloud->points){
+            cnt++;
+            if(isnan(pt.x)||isnan(pt.y)||isnan(pt.z))
+            continue;
+            ROS_INFO("cnt %d",cnt);
             ROS_INFO("%f %f %f",pt.x,pt.y,pt.z);
         }
         ROS_INFO("Cloud:width = %d,height = %d",point->width,point->height);
