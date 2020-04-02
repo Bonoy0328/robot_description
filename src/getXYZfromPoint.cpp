@@ -1,13 +1,4 @@
 #include "ros/ros.h"
-<<<<<<< HEAD
-=======
-#include "pcl_ros/point_cloud.h"
-#include "pcl_conversions/pcl_conversions.h"
-#include "pcl/point_types.h"
-#include "pcl/PCLPointCloud2.h"
-#include "pcl/conversions.h"
-#include "pcl_ros/transforms.h"
->>>>>>> a957c61054b1645fd8d3e201a5475dc2454f895b
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.h"
 #include "sensor_msgs/Image.h"
