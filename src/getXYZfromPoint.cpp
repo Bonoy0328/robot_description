@@ -1,5 +1,10 @@
 #include "ros/ros.h"
 #include "pcl_ros/point_cloud.h"
+#include "pcl_conversions/pcl_conversions.h"
+#include "pcl/point_types.h"
+#include "pcl/PCLPointCloud2.h"
+#include "pcl/conversions.h"
+#include "pcl_ros/transforms.h"
 #include "cv_bridge/cv_bridge.h"
 #include "image_transport/image_transport.h"
 #include "sensor_msgs/Image.h"
@@ -19,7 +24,6 @@ private:
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     pcl::PCLPointCloud2 pcl_pc2;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     uint8_t flag=0;
     // cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
 public:
@@ -30,6 +34,7 @@ public:
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
         cv_bridge::CvImagePtr cvImagePtr;
         pcl_conversions::toPCL(*point,pcl_pc2);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud);
         BOOST_FOREACH(const pcl::PointXYZ& pt,temp_cloud->points){
             ROS_INFO("%f %f %f",pt.x,pt.y,pt.z);
