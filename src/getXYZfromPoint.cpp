@@ -34,7 +34,6 @@ private:
     long int cnt = 0;
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VecVector3d;
-    sensor_msgs::PointCloud2ConstPtr& point_last;
 // cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
 public:
     getXYZfromPoint(){
@@ -77,14 +76,12 @@ public:
 
         //上一帧的数据
         if(flag==0){//如果是第一次进入，则和第一帧解算相同
-            pcl_conversions::toPCL(*point,pcl_pc2);
-            pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
+            // pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud_last);
             cvColorImgMat2 = cvImagePtr->image;
             flag =2;
         }else{
-            pcl_conversions::toPCL(*point_last,pcl_pc2l);
-            pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
+            // pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::fromPCLPointCloud2(pcl_pc2l,*temp_cloud_last);            
         }
         // cvColorImgMat2 = cvImagePtr->image;
@@ -151,7 +148,7 @@ public:
         //Opencv 解位姿
         t1 = std::chrono::steady_clock::now();
         cv::Mat r, t;
-        cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
+        cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
         cv::Mat R;
         cv::Rodrigues(r, R); // r为旋转向量形式，用Rodrigues公式转换为矩阵
         t2 = std::chrono::steady_clock::now();
@@ -176,7 +173,7 @@ public:
         // std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
        
         //保存上一帧的数据
-        point_last = point;
+        pcl_pc2l = pcl_pc2;
         cvColorImgMat2 = cvColorImgMat;
         //draw answer
         cv::Mat img_match;
