@@ -203,8 +203,12 @@ include_directories(
 # catkin_add_nosetests(test)
 
 find_package(OpenCV)
+find_package(Sophus)
+find_package(Eigen3)
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
+  ${Sophus_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 add_executable(robot_des
   src/robot_des.cpp
@@ -270,4 +274,6 @@ add_dependencies(getXYZfromPoint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 target_link_libraries(getXYZfromPoint
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
+  ${Sophus_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )

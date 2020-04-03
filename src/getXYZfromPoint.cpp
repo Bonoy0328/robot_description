@@ -16,8 +16,9 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include <sophus/se3.hpp>
-#include <Eigen/Core>
+// #include <Eigen/Core>
 #include <iostream>
+#include "eigen3/Eigen/Core"
 class getXYZfromPoint
 {
 private:
@@ -29,13 +30,15 @@ private:
     pcl::PCLPointCloud2 pcl_pc2;
     uint8_t flag=0;
     long int cnt = 0;
-    // cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
+    typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
+    typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VecVector3d;
+
+// cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
 public:
     getXYZfromPoint(){
         // sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/camera/depth_registered/points",1,&getXYZfromPoint::callback,this);
         sub = nh.subscribe("/camera/depth_registered/points",5,&getXYZfromPoint::callback,this);
-    };
-    
+    }
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
         cnt = 0;
         cv_bridge::CvImagePtr cvImagePtr;
@@ -125,8 +128,8 @@ public:
             d.z = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].z;
             if(isnan(d.x)||isnan(d.y)||isnan(d.z))
                 continue;
-            pts_3d.push_back(d)
-            pts_2d.push_back(keypoints2[m.queryIdx].pt)
+            pts_3d.push_back(d);
+            pts_2d.push_back(keypoints2[m.queryIdx].pt);
             // ROS_INFO("%f %f %f",d.x,d.y,d.z);
             // ROS_INFO("%d %d",int(keypoints[m.queryIdx].pt.x),int(keypoints[m.queryIdx].pt.y));
         }
@@ -134,18 +137,18 @@ public:
         
         //gaussNewton 解位姿
         cv::Mat K = (cv::Mat_<double>(3, 3) << 525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1);
-        std::VecVector3d pts_3d_eigen;
-        std::VecVector3d pts_2d_eigen;
+        getXYZfromPoint::VecVector3d pts_3d_eigen;
+        getXYZfromPoint::VecVector2d pts_2d_eigen;
         for (size_t i = 0; i < pts_3d.size(); ++i) {
             pts_3d_eigen.push_back(Eigen::Vector3d(pts_3d[i].x, pts_3d[i].y, pts_3d[i].z));
             pts_2d_eigen.push_back(Eigen::Vector2d(pts_2d[i].x, pts_2d[i].y));
         }
         std::cout << "calling bundle adjustment by gauss newton " << std::endl;
         Sophus::SE3d pose_gn;
-        t1 = chrono::steady_clock::now();
-        getXYZfromPoint::budleAdjustmentGaussNewton(pts_3d_eigen,pts_2d_eigen,K,pose_gn)
-        t2 = chrono::steady_clock::now();
-        time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+        t1 = std::chrono::steady_clock::now();
+        getXYZfromPoint::bundleAdjustmentGaussNewton(pts_3d_eigen,pts_2d_eigen,K,pose_gn);
+        t2 = std::chrono::steady_clock::now();
+        time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
         std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
         // //draw answer
         // cv::Mat img_match;
@@ -156,11 +159,7 @@ public:
         // cv::waitKey(5);
         // ROS_INFO("%f %f %f",point->points[240000].b,point->points[240000].g,point->points[240000].r);
     }
-    void bundleAdjustmentGaussNewton(
-    const VecVector3d &points_3d,
-    const VecVector2d &points_2d,
-    const Mat &K,
-    Sophus::SE3d &pose) {
+void bundleAdjustmentGaussNewton( const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
         typedef Eigen::Matrix<double,6,1> Vector6d;
         const int iterations = 10;
         double cost = 0,lastCost = 0;
@@ -214,12 +213,12 @@ public:
             //update estimation
             pose = Sophus::SE3d::exp(dx) * pose;
             lastCost = cost;
-            std::cout << "iteration " << iter << " cost=" << std::setpreciseion(12) << cost << std::endl;
+            std::cout << "iteration " << iter << " cost=" << std::setprecision(12) << cost << std::endl;
             if(dx.norm() < 1e-6){
                 break;
             }
         }
-        std::cout << "pose by g-n \n" << pose.mtrix() <<std::endl;
+        std::cout << "pose by g-n \n" << pose.matrix() <<std::endl;
     }
 };
 int main(int argc, char *argv[])
