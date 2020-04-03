@@ -29,11 +29,12 @@ private:
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     pcl::PCLPointCloud2 pcl_pc2;
+    pcl::PCLPointCloud2 pcl_pc2l;
     uint8_t flag=0;
     long int cnt = 0;
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VecVector3d;
-
+    sensor_msgs::PointCloud2ConstPtr& point_last;
 // cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
 public:
     getXYZfromPoint(){
@@ -42,9 +43,12 @@ public:
     }
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
         cnt = 0;
+
+        //当前帧数据
         cv_bridge::CvImagePtr cvImagePtr;
         pcl_conversions::toPCL(*point,pcl_pc2);
         pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
         pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud);
         //now we know image(x,y) → point2(y*640+x)
         // BOOST_FOREACH(const pcl::PointXYZ& pt,temp_cloud->points){
@@ -70,9 +74,18 @@ public:
             return;
         }
         cvColorImgMat = cvImagePtr->image;
-        if(flag==0){
+
+        //上一帧的数据
+        if(flag==0){//如果是第一次进入，则和第一帧解算相同
+            pcl_conversions::toPCL(*point,pcl_pc2);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud_last);
             cvColorImgMat2 = cvImagePtr->image;
             flag =2;
+        }else{
+            pcl_conversions::toPCL(*point_last,pcl_pc2l);
+            pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
+            pcl::fromPCLPointCloud2(pcl_pc2l,*temp_cloud_last);            
         }
         // cvColorImgMat2 = cvImagePtr->image;
         std::vector<cv::KeyPoint> keypoints,keypoints2;
@@ -88,7 +101,6 @@ public:
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         std::chrono::duration<double> time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
         ROS_INFO("extract ORB cost = %f seconds",time_used.count());
-        cvColorImgMat2 = cvColorImgMat;
 
         //match
         std::vector<cv::DMatch> matches;
@@ -121,16 +133,16 @@ public:
 
         //获取3D点
         cv::Point3f d;
-        std::vector<cv::Point3f> pts_3d;
-        std::vector<cv::Point2f> pts_2d;
+        std::vector<cv::Point3f> pts_3d,pts_3d_last;
+        std::vector<cv::Point2f> pts_2d,pts_2d_last;
         BOOST_FOREACH(cv::DMatch m,good_matches){
-            d.x = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].x;
-            d.y = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].y;
-            d.z = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].z;
+            d.x = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].x;
+            d.y = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].y;
+            d.z = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].z;
             if(isnan(d.x)||isnan(d.y)||isnan(d.z))
                 continue;
             pts_3d.push_back(d);
-            pts_2d.push_back(keypoints2[m.queryIdx].pt);
+            pts_2d.push_back(keypoints[m.queryIdx].pt);
             // ROS_INFO("%f %f %f",d.x,d.y,d.z);
             // ROS_INFO("%d %d",int(keypoints[m.queryIdx].pt.x),int(keypoints[m.queryIdx].pt.y));
         }
@@ -163,7 +175,9 @@ public:
         // time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
         // std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
        
-       
+        //保存上一帧的数据
+        point_last = point;
+        cvColorImgMat2 = cvColorImgMat;
         //draw answer
         cv::Mat img_match;
         cv::Mat img_goodmatch;
