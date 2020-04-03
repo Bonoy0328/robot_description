@@ -115,14 +115,18 @@ public:
         ROS_INFO("一共找到了 %d 组匹配点",good_matches.size());
 
         //获取3D点
-        std::vector<Point3f> pts_3d;
-        std::vector<Point2f> pts_2d;
+        cv::Point3f d;
+        std::vector<cv::Point3f> pts_3d;
+        std::vector<cv::Point2f> pts_2d;
         BOOST_FOREACH(cv::DMatch m,good_matches){
-            cv::Point3f d = temp_cloud->points[int(keypoints_1[m.queryIdx].pt.y)*640 + int(keypoints_1[m.queryIdx].pt.x)]
+            d.x = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].x;
+            d.y = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].y;
+            d.z = temp_cloud->points[int(keypoints[m.queryIdx].pt.y)*640 + int(keypoints[m.queryIdx].pt.x)].z;
             if(isnan(d.x)||isnan(d.y)||isnan(d.z))
                 continue;
             // pts_3d.push_back(d)
             ROS_INFO("%f %f %f",d.x,d.y,d.z);
+            ROS_INFO("%d %d",int(keypoints[m.queryIdx].pt.x),int(keypoints[m.queryIdx].pt.y));
 
         }
         // for (cv::DMatch m:good_matches){
