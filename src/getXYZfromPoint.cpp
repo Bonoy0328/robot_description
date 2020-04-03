@@ -74,7 +74,7 @@ public:
             cvColorImgMat2 = cvImagePtr->image;
             flag =2;
         }
-
+        // cvColorImgMat2 = cvImagePtr->image;
         std::vector<cv::KeyPoint> keypoints,keypoints2;
         cv::Mat descriptors,descriptors2;
         cv::Ptr<cv::FeatureDetector> detector = cv::ORB::create();
@@ -137,16 +137,17 @@ public:
         std::cout << "3d-2s pairs: " << pts_3d.size() << std::endl;
         cv::Mat K = (cv::Mat_<double>(3, 3) << 525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1);
         //Opencv 解位姿
+        t1 = std::chrono::steady_clock::now();
         cv::Mat r, t;
-        cv::solvePnP(pts_3d, pts_2d, K, Mat(), r, t, false); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
+        cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
         cv::Mat R;
         cv::Rodrigues(r, R); // r为旋转向量形式，用Rodrigues公式转换为矩阵
-        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-        std::chrono::duration<double> time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        cout << "solve pnp in opencv cost time: " << time_used.count() << " seconds." << endl;
+        t2 = std::chrono::steady_clock::now();
+        time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+        std::cout << "solve pnp in opencv cost time: " << time_used.count() << " seconds." << std::endl;
 
-        cout << "R=" << endl << R << endl;
-        cout << "t=" << endl << t << endl;
+        std::cout << "R=" << std::endl << R << std::endl;
+        std::cout << "t=" << std::endl << t << std::endl;
         //gaussNewton 解位姿
         // getXYZfromPoint::VecVector3d pts_3d_eigen;
         // getXYZfromPoint::VecVector2d pts_2d_eigen;
@@ -163,13 +164,13 @@ public:
         // std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
        
        
-        // //draw answer
-        // cv::Mat img_match;
-        // cv::Mat img_goodmatch;
-        // cv::drawMatches(cvColorImgMat,keypoints,cvColorImgMat2,keypoints2,good_matches,img_goodmatch);
-        // cv::imshow("good matches",img_goodmatch);
-        // // cv::imshow("grayview",cvGrayImgMat);
-        // cv::waitKey(5);
+        //draw answer
+        cv::Mat img_match;
+        cv::Mat img_goodmatch;
+        cv::drawMatches(cvColorImgMat,keypoints,cvColorImgMat2,keypoints2,good_matches,img_goodmatch);
+        cv::imshow("good matches",img_goodmatch);
+        // cv::imshow("grayview",cvGrayImgMat);
+        cv::waitKey(5);
         // ROS_INFO("%f %f %f",point->points[240000].b,point->points[240000].g,point->points[240000].r);
     }
 void bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
