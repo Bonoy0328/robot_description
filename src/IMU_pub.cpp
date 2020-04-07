@@ -32,7 +32,7 @@ boost::array<double, 36> odom_twist_covariance = {
     0, 0, 0, 1e6, 0, 0, 
     0, 0, 0, 0, 1e6, 0, 
     0, 0, 0, 0, 0, 1e-9}};
-	double q;
+	// double q;
 	double ax=0.0,ay=0.0,az=0.0,wx=0.0,wy=0.0,wz=0.0,q0=0.0,q1=0.0,q2=0.0,q3=0.0;
 	double vx_=0.0,vy_=0.0,vth_=0.0,x_=0.0,y_=0.0,th_=0.0;
 	int odom_left=0,odom_right=0,vec_left=0,vec_right=0,vec_leftOld=0,vec_rightOld=0;
