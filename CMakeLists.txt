@@ -205,10 +205,12 @@ include_directories(
 find_package(OpenCV)
 find_package(Sophus)
 find_package(Eigen3)
+find_package(Pangolin)
 include_directories(
   ${OpenCV_INCLUDE_DIRS}
   ${Sophus_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
+  ${Pangolin_INCLUDE_DIRS}
 )
 add_executable(robot_des
   src/robot_des.cpp
@@ -281,4 +283,5 @@ target_link_libraries(getXYZfromPoint
   ${OpenCV_LIBRARIES}
   ${Sophus_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
+  ${Pangolin_INCLUDE_DIRS}
 )
