@@ -20,7 +20,8 @@
 // #include <Eigen/Core>
 #include <iostream>
 #include "eigen3/Eigen/Core"
-#include "pangolin/pangolin.h"
+// #include "pangolin/pangolin.h"
+// #include "pangolin/pangolin.h"
 class getXYZfromPoint
 {
 private:
@@ -29,6 +30,7 @@ private:
     sensor_msgs::Image image_;
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
+    cv::Mat r, t;
     pcl::PCLPointCloud2 pcl_pc2;
     pcl::PCLPointCloud2 pcl_pc2l;
     uint8_t flag=0;
@@ -147,33 +149,32 @@ public:
         std::cout << "3d-2s pairs: " << pts_3d.size() << std::endl;
         cv::Mat K = (cv::Mat_<double>(3, 3) << 525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1);
         //Opencv 解位姿
-        // t1 = std::chrono::steady_clock::now();
-        // cv::Mat r, t;
-        // cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
-        // cv::Mat R;
-        // cv::Rodrigues(r, R); // r为旋转向量形式，用Rodrigues公式转换为矩阵
-        // t2 = std::chrono::steady_clock::now();
-        // time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        // std::cout << "solve pnp in opencv cost time: " << time_used.count() << " seconds." << std::endl;
-
-        // std::cout << "R=" << std::endl << R << std::endl;
-        // std::cout << "t=" << std::endl << t << std::endl;
-
-        //gaussNewton 解位姿
-        getXYZfromPoint::VecVector3d pts_3d_eigen;
-        getXYZfromPoint::VecVector2d pts_2d_eigen;
-        for (size_t i = 0; i < pts_3d.size(); ++i) {
-            pts_3d_eigen.push_back(Eigen::Vector3d(pts_3d[i].x, pts_3d[i].y, pts_3d[i].z));
-            pts_2d_eigen.push_back(Eigen::Vector2d(pts_2d[i].x, pts_2d[i].y));
-        }
-        std::cout << "calling bundle adjustment by gauss newton " << std::endl;
-        Sophus::SE3d pose_gn;
         t1 = std::chrono::steady_clock::now();
-        pose_gn = getXYZfromPoint::bundleAdjustmentGaussNewton(pts_3d_eigen,pts_2d_eigen,K,pose_gn) * pose_gn;
+        cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
+        cv::Mat R;
+        cv::Rodrigues(r, R); // r为旋转向量形式，用Rodrigues公式转换为矩阵
         t2 = std::chrono::steady_clock::now();
         time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
-        std::cout << "pose by g-n \n" << pose_gn.matrix() <<std::endl;
+        std::cout << "solve pnp in opencv cost time: " << time_used.count() << " seconds." << std::endl;
+
+        std::cout << "R=" << std::endl << R << std::endl;
+        std::cout << "t=" << std::endl << t << std::endl;
+
+        //gaussNewton 解位姿
+        // getXYZfromPoint::VecVector3d pts_3d_eigen;
+        // getXYZfromPoint::VecVector2d pts_2d_eigen;
+        // for (size_t i = 0; i < pts_3d.size(); ++i) {
+        //     pts_3d_eigen.push_back(Eigen::Vector3d(pts_3d[i].x, pts_3d[i].y, pts_3d[i].z));
+        //     pts_2d_eigen.push_back(Eigen::Vector2d(pts_2d[i].x, pts_2d[i].y));
+        // }
+        // std::cout << "calling bundle adjustment by gauss newton " << std::endl;
+        // Sophus::SE3d pose_gn;
+        // t1 = std::chrono::steady_clock::now();
+        // pose_gn = getXYZfromPoint::bundleAdjustmentGaussNewton(pts_3d_eigen,pts_2d_eigen,K,pose_gn) * pose_gn;
+        // t2 = std::chrono::steady_clock::now();
+        // time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+        // std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
+        // std::cout << "pose by g-n \n" << pose_gn.matrix() <<std::endl;
         // Eigen::Matrix3d = pose_gn.m
         //保存上一帧的数据
         pcl_pc2l = pcl_pc2;
@@ -187,7 +188,7 @@ public:
         cv::waitKey(5);
         // ROS_INFO("%f %f %f",point->points[240000].b,point->points[240000].g,point->points[240000].r);
     }
-Sophus::SE3d &pose_es bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
+Sophus::SE3d bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
         typedef Eigen::Matrix<double,6,1> Vector6d;
         const int iterations = 10;
         double cost = 0,lastCost = 0;
@@ -247,9 +248,9 @@ Sophus::SE3d &pose_es bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVect
             }
         }
         // std::cout << "pose by g-n \n" << pose.matrix() <<std::endl;
-        return &pose;
+        return pose;
     }
-void DrawTrajectory(std::vector<Eigen::Isometry3d>)
+// void DrawTrajectory(std::vector<Eigen::Isometry3d>)
 };
 int main(int argc, char *argv[])
 {
