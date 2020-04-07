@@ -29,6 +29,7 @@
 #include "sensor_msgs/Imu.h"
 #include "eigen3/Eigen/Core"
 #include <sophus/se3.hpp>
+#include <iostream>
 sensor_msgs::Image image_;
 cv::Mat cvColorImgMat;
 cv::Mat cvColorImgMat2;
@@ -40,7 +41,7 @@ typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> 
 typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VecVector3d;
 
 
-void bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
+void bundleAdjustmentGaussNewton(const VecVector3d &points_3d,const VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
     typedef Eigen::Matrix<double,6,1> Vector6d;
     const int iterations = 10;
     double cost = 0,lastCost = 0;
@@ -105,6 +106,7 @@ void bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,c
 
 
 void callback(const sensor_msgs::ImuConstPtr& imu,const sensor_msgs::PointCloud2ConstPtr& point){
+    std::cout <<"this is quternion"   << imu-> orientation.x << std::endl;
     cv_bridge::CvImagePtr cvImagePtr;
     pcl_conversions::toPCL(*point,pcl_pc2);
     pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -247,7 +249,7 @@ int main(int argc, char *argv[])
     ros::NodeHandle nh_;
     message_filters::Subscriber<sensor_msgs::Imu> sub(nh_,"/imu_data",1);
     message_filters::Subscriber<sensor_msgs::PointCloud2> sub2(nh_,"/camera/depth_registered/points",1);
-    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Image,pcl::PointCloud<pcl::PointXYZ>> MySync;
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Imu,sensor_msgs::PointCloud2> MySync;
     message_filters::Synchronizer<MySync> sync(MySync(10),sub,sub2);
     sync.registerCallback(boost::bind(&callback,_1,_2));
     // cv::namedWindow("colorview",cv::WINDOW_NORMAL);
