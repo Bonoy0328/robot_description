@@ -248,6 +248,9 @@ add_executable(IMU_pub
 add_dependencies(IMU_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(IMU_pub
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${Sophus_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
 add_executable(ekf_odom
