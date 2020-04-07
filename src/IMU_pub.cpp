@@ -154,21 +154,13 @@ boost::array<double, 36> odom_twist_covariance = {
 		sensor_msgs::Imu imu_data;
 		imu_data.header.stamp = ros::Time::now();
 		imu_data.header.frame_id = "imu_frame";
-<<<<<<< HEAD
-		q = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-		imu_data.orientation.x = q1;
-		imu_data.orientation.y = q2;
-		imu_data.orientation.z = q3;
-		imu_data.orientation.w = q0;
-=======
 		// q = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
-		q = Quaterniond(q0,q1,q2,q3,q4);
+		q = Eigen::Quaterniond(q0,q1,q2,q3);
 		q.normalized();
 		imu_data.orientation.x = q.x();
 		imu_data.orientation.y = q.y();
 		imu_data.orientation.z = q.z();
 		imu_data.orientation.w = q.w();
->>>>>>> 1169346d14ff4f90553a169f3cc3646a0b839a1f
 
 		imu_data.linear_acceleration.x = ax;
 		imu_data.linear_acceleration.y = ay;
