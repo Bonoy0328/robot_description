@@ -265,6 +265,8 @@ add_dependencies(ORB_feature ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 target_link_libraries(ORB_feature
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
+  ${Sophus_INCLUDE_DIRS}
+  ${Eigen3_INCLUDE_DIRS}
 )
 
 add_executable(getXYZfromPoint
