@@ -3,11 +3,13 @@
 #include "image_transport/image_transport.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/image_encodings.h"
+#include "eigen3/Eigen/Core"
+#include "eigen3/Eigen/Dense"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include <opencv2/calib3d/calib3d.hpp>
-// #include <opencv2/core/eigen.hpp>
+#include <opencv2/core/eigen.hpp>
 #include <boost/foreach.hpp>
 #include <chrono>
 #include <pcl/io/pcd_io.h>
@@ -20,11 +22,11 @@
 #include <sophus/se3.hpp>
 // #include <Eigen/Core>
 #include <iostream>
-#include "eigen3/Eigen/Core"
 #include <pangolin/pangolin.h>
 // #include "pangolin/pangolin.h"
 using namespace std;
 using namespace Eigen;
+using namespace cv;
 class getXYZfromPoint
 {
 
@@ -157,7 +159,8 @@ public:
         t1 = std::chrono::steady_clock::now();
         cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
         cv::Mat R(3,3,CV_64FC1);
-        Eigen::MatrixXd rotation_matrix=Eigen::MatrixXd(R.rows,R.cols);
+        Eigen::Matrix3d rotation_matrix;
+        Eigen::Vector3d eigent;
         cv::Rodrigues(r, R); // r为旋转向量形式，用Rodrigues公式转换为矩阵
         t2 = std::chrono::steady_clock::now();
         time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
@@ -165,9 +168,11 @@ public:
 
         std::cout << "R=" << std::endl << R << std::endl;
         std::cout << "t=" << std::endl << t << std::endl;
-        // cv::cv2eigen(R,rotation_matrix);
-        Isometry3d Twr(Quaterniond(1,1,1,1));
-        Twr.pretranslate(Vector3d(1,2,3));
+        cv::cv2eigen(R,rotation_matrix);
+        cv::cv2eigen(t,eigent);
+        Eigen::Quaterniond qua(rotation_matrix);
+        Isometry3d Twr(qua);
+        Twr.pretranslate(eigent);
         poses.push_back(Twr);
         DrawTrajectory(poses);
         //gaussNewton 解位姿
@@ -307,7 +312,8 @@ void DrawTrajectory(vector<Isometry3d, Eigen::aligned_allocator<Isometry3d>> pos
       glEnd();
     }
     pangolin::FinishFrame();
-    usleep(5000);   // sleep 5 ms
+    pangolin::Quit();
+    //usleep(5000);   // sleep 5 ms
   }
 }
 };
