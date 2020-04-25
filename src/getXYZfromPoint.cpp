@@ -172,13 +172,13 @@ public:
         std::cout << "R=" << std::endl << R << std::endl;
         std::cout << "t=" << std::endl << t << std::endl;
         cv::cv2eigen(R,rotation_matrix);
-        // cv::cv2eigen(t,eigent);
+        cv::cv2eigen(t,eigent);
         Eigen::Quaterniond qua(rotation_matrix);
-        robot_pose.header.stamp = point.header.stamp;
+        robot_pose.header.stamp = point->header.stamp;
         robot_pose.header.frame_id = "robot_pose";
-        robot_pose.pose.position.x = t[0];
-        robot_pose.pose.position.y = t[1];
-        robot_pose.pose.position.z = t[2];
+        robot_pose.pose.position.x = eigent(0);
+        robot_pose.pose.position.y = eigent(1);
+        robot_pose.pose.position.z = eigent(2);
         robot_pose.pose.orientation.x = qua.x();
         robot_pose.pose.orientation.y = qua.y();
         robot_pose.pose.orientation.z = qua.z();
