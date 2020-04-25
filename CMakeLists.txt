@@ -285,3 +285,15 @@ target_link_libraries(getXYZfromPoint
   ${Eigen3_LIBRARIES}
   ${Pangolin_LIBRARIES}
 )
+
+add_executable(plotTrac
+  src/plotTrac.cpp
+)
+add_dependencies(plotTrac ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(plotTrac
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${Sophus_LIBRARIES}
+  ${Eigen3_LIBRARIES}
+  ${Pangolin_LIBRARIES}
+)

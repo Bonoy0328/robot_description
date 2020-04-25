@@ -20,10 +20,10 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 #include <sophus/se3.hpp>
-// #include <Eigen/Core>
 #include <iostream>
 #include <pangolin/pangolin.h>
-// #include "pangolin/pangolin.h"
+#include "geometry_msgs/PoseStamped.h"
+
 using namespace std;
 using namespace Eigen;
 using namespace cv;
@@ -33,7 +33,9 @@ class getXYZfromPoint
 private:
     ros::NodeHandle nh;
     ros::Subscriber sub;
+    ros::Publisher pub;
     sensor_msgs::Image image_;
+    geometry_msgs::PoseStamped robot_pose;
     cv::Mat cvColorImgMat;
     cv::Mat cvColorImgMat2;
     cv::Mat r, t;
@@ -49,6 +51,7 @@ public:
     getXYZfromPoint(){
         // sub = nh.subscribe<pcl::PointCloud<pcl::PointXYZ>>("/camera/depth_registered/points",1,&getXYZfromPoint::callback,this);
         sub = nh.subscribe("/camera/depth_registered/points",5,&getXYZfromPoint::callback,this);
+        pub = nh.advertise<geometry_msgs::PoseStamped>("robot_pose",1);
     }
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
         vector<Isometry3d, Eigen::aligned_allocator<Isometry3d>> poses;
@@ -169,12 +172,22 @@ public:
         std::cout << "R=" << std::endl << R << std::endl;
         std::cout << "t=" << std::endl << t << std::endl;
         cv::cv2eigen(R,rotation_matrix);
-        cv::cv2eigen(t,eigent);
+        // cv::cv2eigen(t,eigent);
         Eigen::Quaterniond qua(rotation_matrix);
-        Isometry3d Twr(qua);
-        Twr.pretranslate(eigent);
-        poses.push_back(Twr);
-        DrawTrajectory(poses);
+        robot_pose.header.stamp = point.header.stamp;
+        robot_pose.header.frame_id = "robot_pose";
+        robot_pose.pose.position.x = t[0];
+        robot_pose.pose.position.y = t[1];
+        robot_pose.pose.position.z = t[2];
+        robot_pose.pose.orientation.x = qua.x();
+        robot_pose.pose.orientation.y = qua.y();
+        robot_pose.pose.orientation.z = qua.z();
+        robot_pose.pose.orientation.w = qua.w();
+        pub.publish(robot_pose);
+        // Isometry3d Twr(qua);
+        // Twr.pretranslate(eigent);
+        // poses.push_back(Twr);
+        // DrawTrajectory(poses);
         //gaussNewton 解位姿
         // getXYZfromPoint::VecVector3d pts_3d_eigen;
         // getXYZfromPoint::VecVector2d pts_2d_eigen;
