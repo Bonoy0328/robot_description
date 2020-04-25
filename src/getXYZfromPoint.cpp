@@ -7,6 +7,7 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include <opencv2/calib3d/calib3d.hpp>
+// #include <opencv2/core/eigen.hpp>
 #include <boost/foreach.hpp>
 #include <chrono>
 #include <pcl/io/pcd_io.h>
@@ -22,10 +23,11 @@
 #include "eigen3/Eigen/Core"
 #include <pangolin/pangolin.h>
 // #include "pangolin/pangolin.h"
-class getXYZfromPoint
-{
 using namespace std;
 using namespace Eigen;
+class getXYZfromPoint
+{
+
 private:
     ros::NodeHandle nh;
     ros::Subscriber sub;
@@ -37,6 +39,7 @@ private:
     pcl::PCLPointCloud2 pcl_pc2l;
     uint8_t flag=0;
     long int cnt = 0;
+    
     typedef std::vector<Eigen::Vector2d, Eigen::aligned_allocator<Eigen::Vector2d>> VecVector2d;
     typedef std::vector<Eigen::Vector3d, Eigen::aligned_allocator<Eigen::Vector3d>> VecVector3d;
 // cv::Mat color = cv::Mat::zeros(cv::Size(640,480,3),CV_64FC1);
@@ -46,7 +49,7 @@ public:
         sub = nh.subscribe("/camera/depth_registered/points",5,&getXYZfromPoint::callback,this);
     }
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
-        vector<Isometry3d,Eigen::aligned_allocator<Isometry3d>> poses;
+        vector<Isometry3d, Eigen::aligned_allocator<Isometry3d>> poses;
         cnt = 0;
         //当前帧数据
         cv_bridge::CvImagePtr cvImagePtr;
@@ -153,7 +156,8 @@ public:
         //Opencv 解位姿
         t1 = std::chrono::steady_clock::now();
         cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
-        cv::Mat R;
+        cv::Mat R(3,3,CV_64FC1);
+        Eigen::MatrixXd rotation_matrix=Eigen::MatrixXd(R.rows,R.cols);
         cv::Rodrigues(r, R); // r为旋转向量形式，用Rodrigues公式转换为矩阵
         t2 = std::chrono::steady_clock::now();
         time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
@@ -161,11 +165,11 @@ public:
 
         std::cout << "R=" << std::endl << R << std::endl;
         std::cout << "t=" << std::endl << t << std::endl;
-        Matrix3d rotation_matrix = R;
-        Isometry3d Twr(Quaterniond(rotation_matrix));
-        Twr.pretranslate(Vector3d(t[0],t[1],t[2]));
+        // cv::cv2eigen(R,rotation_matrix);
+        Isometry3d Twr(Quaterniond(1,1,1,1));
+        Twr.pretranslate(Vector3d(1,2,3));
         poses.push_back(Twr);
-        DrawTrajectory(Twr);
+        DrawTrajectory(poses);
         //gaussNewton 解位姿
         // getXYZfromPoint::VecVector3d pts_3d_eigen;
         // getXYZfromPoint::VecVector2d pts_2d_eigen;
@@ -256,7 +260,7 @@ Sophus::SE3d bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &poi
         // std::cout << "pose by g-n \n" << pose.matrix() <<std::endl;
         return pose;
     }
-void DrawTrajectory(vector<Isometry3d,Eigen::aligned_allocator<Isometry3d>> poses){
+void DrawTrajectory(vector<Isometry3d, Eigen::aligned_allocator<Isometry3d>> poses){
     pangolin::CreateWindowAndBind("Trajectory Viewer", 1024, 768);
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_BLEND);

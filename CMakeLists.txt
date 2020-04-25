@@ -251,8 +251,8 @@ add_dependencies(IMU_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_T
 target_link_libraries(IMU_pub
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${Sophus_INCLUDE_DIRS}
-  ${Eigen3_INCLUDE_DIRS}
+  ${Sophus_LIBRARIES}
+  ${Eigen3_LIBRARIES}
 )
 
 add_executable(ekf_odom
@@ -270,8 +270,8 @@ add_dependencies(ORB_feature ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 target_link_libraries(ORB_feature
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${Sophus_INCLUDE_DIRS}
-  ${Eigen3_INCLUDE_DIRS}
+  ${Sophus_LIBRARIES}
+  ${Eigen3_LIBRARIES}
 )
 
 add_executable(getXYZfromPoint
@@ -281,7 +281,7 @@ add_dependencies(getXYZfromPoint ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 target_link_libraries(getXYZfromPoint
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${Sophus_INCLUDE_DIRS}
-  ${Eigen3_INCLUDE_DIRS}
-  ${Pangolin_INCLUDE_DIRS}
+  ${Sophus_LIBRARIES}
+  ${Eigen3_LIBRARIES}
+  ${Pangolin_LIBRARIES}
 )
