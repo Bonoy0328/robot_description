@@ -21,6 +21,7 @@
 #include <pcl_ros/transforms.h>
 #include <sophus/se3.hpp>
 #include <iostream>
+#include <fstream>
 #include <pangolin/pangolin.h>
 #include "geometry_msgs/PoseStamped.h"
 
@@ -54,6 +55,9 @@ public:
         pub = nh.advertise<geometry_msgs::PoseStamped>("robot_pose",1);
     }
     void callback(const sensor_msgs::PointCloud2ConstPtr& point){
+        cv::Point3f d;
+        std::vector<cv::Point3f> pts_3d,pts_3d_last;
+        std::vector<cv::Point2f> pts_2d,pts_2d_last;
         vector<Isometry3d, Eigen::aligned_allocator<Isometry3d>> poses;
         cnt = 0;
         //当前帧数据
@@ -70,7 +74,7 @@ public:
         //     ROS_INFO("cnt %d",cnt);
         //     ROS_INFO("%f %f %f",pt.x,pt.y,pt.z);
         // }
-        ROS_INFO("Cloud:width = %d,height = %d",point->width,point->height);
+        ROS_INFO("Cloud:width = %d,height = %d",temp_cloud->width,temp_cloud->height);
         try
         {
             pcl::toROSMsg(*point,image_);
@@ -95,7 +99,8 @@ public:
             flag =2;
         }else{
             // pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::fromPCLPointCloud2(pcl_pc2l,*temp_cloud_last);            
+            pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud_last);      
+            cvColorImgMat2 = cvImagePtr->image;      
         }
         // cvColorImgMat2 = cvImagePtr->image;
         std::vector<cv::KeyPoint> keypoints,keypoints2;
@@ -121,7 +126,7 @@ public:
         }
         catch(const cv::Exception& e)
         {
-            ROS_INFO(e.what());
+            cout<< e.what() <<endl;
         }
         
 
@@ -139,28 +144,39 @@ public:
             if(matches[i].distance <= std::max(2 * min_dist,30.0))
                 good_matches.push_back(matches[i]);
         }
-        ROS_INFO("一共找到了 %d 组匹配点",good_matches.size());
-
+       cout << "一共找到了 %d 组匹配点" << good_matches.size() <<endl;
+        ofstream ofs;
+        ofs.open("/home/bonoy/data/ORBfeature.txt",ios::app);
+        ofs << "time " << time_used.count() << "num" << good_matches.size() <<endl;
+        ofs.close();
         //获取3D点
-        cv::Point3f d;
-        std::vector<cv::Point3f> pts_3d,pts_3d_last;
-        std::vector<cv::Point2f> pts_2d,pts_2d_last;
-        BOOST_FOREACH(cv::DMatch m,good_matches){
+        // BOOST_FOREACH(cv::DMatch m,good_matches){
+            cv::DMatch m;
+            for(int i=0;i<good_matches.size();i++){
+            m = good_matches[i];
             d.x = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].x;
             d.y = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].y;
-            d.z = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].z;
+            d.z = temp_cloud_last->points[int(keypoints2[m.queryIdx].pt.y)*640 + int(keypoints2[m.queryIdx].pt.x)].z;      
             if(isnan(d.x)||isnan(d.y)||isnan(d.z))
                 continue;
             pts_3d.push_back(d);
-            pts_2d.push_back(keypoints[m.queryIdx].pt);
-            // ROS_INFO("%f %f %f",d.x,d.y,d.z);
-            // ROS_INFO("%d %d",int(keypoints[m.queryIdx].pt.x),int(keypoints[m.queryIdx].pt.y));
+            pts_2d.push_back(keypoints[m.trainIdx].pt);
+            // cout << "X: "<<d.x << " Y: " << d.y << " Z: "<< d.z << endl;
+            // cout << "x:" << int(keypoints2[m.queryIdx].pt.x) << " y:" << int(keypoints2[m.queryIdx].pt.y) <<endl;
+            // cout << "u:" << int(525.0*(d.x/d.z)+319.5) << " v:" << int(525*(d.y/d.z)+239.5) <<endl;
+            // // ROS_INFO("u %d v %d",i,121);
         }
         std::cout << "3d-2s pairs: " << pts_3d.size() << std::endl;
         cv::Mat K = (cv::Mat_<double>(3, 3) << 525.0, 0, 319.5, 0, 525.0, 239.5, 0, 0, 1);
         //Opencv 解位姿
         t1 = std::chrono::steady_clock::now();
-        cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
+        try{
+            cv::solvePnP(pts_3d, pts_2d, K, cv::Mat(), r, t, false,CV_ITERATIVE); 
+        }catch(const cv::Exception& e)
+        {
+            cout<< e.what() <<endl;
+        }
+        // 调用OpenCV 的 PnP 求解，可选择EPNP，DLS等方法
         cv::Mat R(3,3,CV_64FC1);
         Eigen::Matrix3d rotation_matrix;
         Eigen::Vector3d eigent;
@@ -184,6 +200,7 @@ public:
         robot_pose.pose.orientation.z = qua.z();
         robot_pose.pose.orientation.w = qua.w();
         pub.publish(robot_pose);
+
         // Isometry3d Twr(qua);
         // Twr.pretranslate(eigent);
         // poses.push_back(Twr);
@@ -198,12 +215,10 @@ public:
         // std::cout << "calling bundle adjustment by gauss newton " << std::endl;
         // Sophus::SE3d pose_gn;
         // t1 = std::chrono::steady_clock::now();
-        // pose_gn = getXYZfromPoint::bundleAdjustmentGaussNewton(pts_3d_eigen,pts_2d_eigen,K,pose_gn) * pose_gn;
+        // getXYZfromPoint::bundleAdjustmentGaussNewton(pts_3d_eigen,pts_2d_eigen,K,pose_gn);
         // t2 = std::chrono::steady_clock::now();
         // time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
         // std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
-        // std::cout << "pose by g-n \n" << pose_gn.matrix() <<std::endl;
-        // Eigen::Matrix3d = pose_gn.m
         //保存上一帧的数据
         pcl_pc2l = pcl_pc2;
         cvColorImgMat2 = cvColorImgMat;
@@ -216,7 +231,7 @@ public:
         cv::waitKey(5);
         // ROS_INFO("%f %f %f",point->points[240000].b,point->points[240000].g,point->points[240000].r);
     }
-Sophus::SE3d bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
+void bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &points_3d,const getXYZfromPoint::VecVector2d &points_2d,const cv::Mat &K,Sophus::SE3d &pose) {
         typedef Eigen::Matrix<double,6,1> Vector6d;
         const int iterations = 10;
         double cost = 0,lastCost = 0;
@@ -275,8 +290,8 @@ Sophus::SE3d bundleAdjustmentGaussNewton(const getXYZfromPoint::VecVector3d &poi
                 break;
             }
         }
-        // std::cout << "pose by g-n \n" << pose.matrix() <<std::endl;
-        return pose;
+        std::cout << "pose by g-n \n" << pose.matrix() <<std::endl;
+        // return pose;
     }
 void DrawTrajectory(vector<Isometry3d, Eigen::aligned_allocator<Isometry3d>> poses){
     pangolin::CreateWindowAndBind("Trajectory Viewer", 1024, 768);
