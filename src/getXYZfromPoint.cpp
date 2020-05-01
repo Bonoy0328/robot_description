@@ -13,6 +13,7 @@
 #include <boost/foreach.hpp>
 #include <chrono>
 #include <pcl/io/pcd_io.h>
+// #include <pcl/common/impl/io.hpp>
 #include "pcl_ros/point_cloud.h"
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
@@ -99,8 +100,8 @@ public:
             flag =2;
         }else{
             // pcl::PointCloud<pcl::PointXYZ>::Ptr temp_cloud_last(new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::fromPCLPointCloud2(pcl_pc2,*temp_cloud_last);      
-            cvColorImgMat2 = cvImagePtr->image;      
+            pcl::fromPCLPointCloud2(pcl_pc2l,*temp_cloud_last);      
+            // cvColorImgMat2 = cvImagePtr->image;      
         }
         // cvColorImgMat2 = cvImagePtr->image;
         std::vector<cv::KeyPoint> keypoints,keypoints2;
@@ -144,7 +145,7 @@ public:
             if(matches[i].distance <= std::max(2 * min_dist,30.0))
                 good_matches.push_back(matches[i]);
         }
-       cout << "一共找到了 %d 组匹配点" << good_matches.size() <<endl;
+        cout << "一共找到了 %d 组匹配点" << good_matches.size() <<endl;
         ofstream ofs;
         ofs.open("/home/bonoy/data/ORBfeature.txt",ios::app);
         ofs << "time " << time_used.count() << "num" << good_matches.size() <<endl;
@@ -220,8 +221,9 @@ public:
         // time_used = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
         // std::cout << "solve pnp by gauss newton cost time: " << time_used.count() << " seconds." << std::endl;
         //保存上一帧的数据
-        pcl_pc2l = pcl_pc2;
-        cvColorImgMat2 = cvColorImgMat;
+        // pcl_pc2l = pcl_pc2;
+        pcl::copyPointCloud(*pcl_pc2,*pcl_pc2l);
+        cvColorImgMat.copyTo(cvColorImgMat2);
         //draw answer
         cv::Mat img_match;
         cv::Mat img_goodmatch;
